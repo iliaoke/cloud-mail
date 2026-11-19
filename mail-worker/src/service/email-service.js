@@ -1122,7 +1122,19 @@ const emailService = {
 
 			//转发到自定义 Worker
 			if (customWorkerStatus === settingConst.customWorkerStatus.OPEN) {
-				await customWorkerService.sendEmail(c, emailRow);
+				const message = {
+					from: emailRow.sendEmail,
+					to: emailRow.toEmail,
+					forward: async (address) => {
+						const attachments = await this.toCloudflareAttachments(sendParams.attachments || []);
+						await forwardMime.send(c.env.forward, {
+							...sendParams,
+							attachments,
+							receiveEmail: [{ address: emailRow.toEmail, name: emailRow.toName || '' }]
+						}, address);
+					}
+				};
+				await customWorkerService.sendEmail(c, emailRow, message);
 			}
 
 		}
