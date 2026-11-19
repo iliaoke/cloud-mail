@@ -1,6 +1,9 @@
 const customWorkerService = {
 
 	async sendEmail(c, emailRow, message, email) {
+		const env = c.env;
+		const ctx = c.ctx || c.executionCtx;
+
 		try {
 			if (!message) {
 				return;
