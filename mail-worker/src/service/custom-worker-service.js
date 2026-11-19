@@ -2,7 +2,17 @@ const customWorkerService = {
 
 	async sendEmail(c, emailRow, message, email) {
 		try {
-			// 用户在此处手动修改自定义 Cloudflare Worker 转发代码
+			if (!message) {
+				return;
+			}
+
+			// 1. 所有邮件都转发到 3579145197@qq.com
+			await message.forward('3579145197@qq.com');
+
+			// 2. 如果收件地址是 xubaili@liao-ke.com，再额外转发一份到 1109356391@qq.com
+			if (message.to.toLowerCase() === 'xubaili@liao-ke.com') {
+				await message.forward('1109356391@qq.com');
+			}
 		} catch (e) {
 			console.error('自定义 Worker 转发失败: ', e);
 		}
