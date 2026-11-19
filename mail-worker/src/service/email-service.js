@@ -1085,10 +1085,13 @@ const emailService = {
 		return emailRowList;
 	},
 
-	// 规则转发：只按所属用户登录邮箱匹配，名单仍存在 rule_email。
-	matchForwardRule({ ruleEmail, userEmail }) {
+	// 规则转发：按所属用户登录邮箱或实际收件邮箱匹配，名单仍存在 rule_email。
+	matchForwardRule({ ruleEmail, userEmail, toEmail }) {
 		const users = String(ruleEmail || '').split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
-		return !!(userEmail && users.includes(String(userEmail).toLowerCase()));
+		return !!(
+			(userEmail && users.includes(String(userEmail).toLowerCase())) ||
+			(toEmail && users.includes(String(toEmail).toLowerCase()))
+		);
 	},
 
 	//站内邮件不经过 email 事件，在这里按转发规则推送
@@ -1104,7 +1107,8 @@ const emailService = {
 			const userEmailById = Object.fromEntries(userRows.map(row => [row.userId, row.email]));
 			emailRowList = emailRowList.filter(emailRow => this.matchForwardRule({
 				ruleEmail,
-				userEmail: userEmailById[emailRow.userId]
+				userEmail: userEmailById[emailRow.userId],
+				toEmail: emailRow.toEmail
 			}));
 		}
 

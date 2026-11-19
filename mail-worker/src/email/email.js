@@ -169,7 +169,8 @@ export async function email(message, env, ctx) {
 		if (ruleType === settingConst.ruleType.RULE) {
 			if (!emailService.matchForwardRule({
 				ruleEmail,
-				userEmail: userRow?.email
+				userEmail: userRow?.email,
+				toEmail: message.to
 			})) {
 				return;
 			}
