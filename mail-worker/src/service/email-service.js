@@ -1108,6 +1108,8 @@ const emailService = {
 			}));
 		}
 
+		let cfAttachments;
+
 		for (const emailRow of emailRowList) {
 
 			//转发到TG
@@ -1126,15 +1128,24 @@ const emailService = {
 					from: emailRow.sendEmail,
 					to: emailRow.toEmail,
 					forward: async (address) => {
-						const attachments = await this.toCloudflareAttachments(sendParams.attachments || []);
-						await forwardMime.send(c.env.forward, {
+						cfAttachments ??= await this.toCloudflareAttachments(sendParams.attachments || []);
+						const result = await forwardMime.send(c.env.forward, {
 							...sendParams,
-							attachments,
+							attachments: cfAttachments,
 							receiveEmail: [{ address: emailRow.toEmail, name: emailRow.toName || '' }]
 						}, address);
+						if (result?.error) {
+							throw result.error;
+						}
 					}
 				};
-				await customWorkerService.sendEmail(c, emailRow, message);
+				await customWorkerService.sendEmail(c, emailRow, message, {
+					subject: emailRow.subject,
+					text: emailRow.text,
+					html: emailRow.content,
+					from: { address: emailRow.sendEmail, name: emailRow.name },
+					to: [{ address: emailRow.toEmail, name: emailRow.toName }]
+				});
 			}
 
 		}
@@ -1145,7 +1156,7 @@ const emailService = {
 			const addresses = forwardEmail.split(',').map(address => address.trim()).filter(Boolean);
 			const params = {
 				...sendParams,
-				attachments: await this.toCloudflareAttachments(sendParams.attachments || []),
+				attachments: cfAttachments ?? await this.toCloudflareAttachments(sendParams.attachments || []),
 				receiveEmail: emailRowList.map(row => ({ address: row.toEmail, name: row.toName || '' })).filter(item => item.address)
 			};
 
