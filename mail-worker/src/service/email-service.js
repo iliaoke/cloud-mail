@@ -24,6 +24,7 @@ import account from "../entity/account";
 import { att } from '../entity/att';
 import telegramService from './telegram-service';
 import webhookService from './webhook-service';
+import customWorkerService from './custom-worker-service';
 import forwardMime from '../utils/forward-mime';
 import verifyUtils from '../utils/verify-utils';
 import { notifyMailWsFromContext } from '../websocket/notify';
@@ -1093,7 +1094,7 @@ const emailService = {
 	//站内邮件不经过 email 事件，在这里按转发规则推送
 	async forwardOnSiteEmail(c, emailRowList, { sendParams }) {
 
-		const { tgBotStatus, tgChatId, forwardStatus, forwardEmail, webhookStatus, webhookUrl, webhookRetry, webhookSecret, ruleEmail, ruleType } = await settingService.query(c);
+		const { tgBotStatus, tgChatId, forwardStatus, forwardEmail, webhookStatus, webhookUrl, webhookRetry, webhookSecret, customWorkerStatus, ruleEmail, ruleType } = await settingService.query(c);
 
 		if (ruleType === settingConst.ruleType.RULE) {
 			const userIds = [...new Set(emailRowList.map(row => row.userId).filter(Boolean))];
@@ -1117,6 +1118,11 @@ const emailService = {
 			//转发到 Webhook
 			if (webhookStatus === settingConst.webhookStatus.OPEN && webhookUrl) {
 				await webhookService.sendEmail(c, emailRow, webhookUrl, webhookRetry, webhookSecret);
+			}
+
+			//转发到自定义 Worker
+			if (customWorkerStatus === settingConst.customWorkerStatus.OPEN) {
+				await customWorkerService.sendEmail(c, emailRow);
 			}
 
 		}
